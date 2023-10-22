@@ -3,7 +3,20 @@ package main
 import (
 	"log"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/go-telegram-bot-api/telegram-bot-api"
+)
+
+var numericKeyboard = tgbotapi.NewReplyKeyboard(
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton("1"),
+		tgbotapi.NewKeyboardButton("2"),
+		tgbotapi.NewKeyboardButton("3"),
+	),
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton("4"),
+		tgbotapi.NewKeyboardButton("5"),
+		tgbotapi.NewKeyboardButton("6"),
+	),
 )
 
 func main() {
@@ -19,36 +32,21 @@ func main() {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
-	updates := bot.GetUpdatesChan(u)
+	updates, err := bot.GetUpdatesChan(u)
 
 	for update := range updates {
-		if update.Message != nil { // If we got a message
-			if update.Message.IsCommand() {
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
-				switch update.Message.Command() {
-				case "help":
-					msg.Text = "type /sayhi or /status."
-				case "sayhi":
-					msg.Text = "Hi :)"
-				case "status":
-					msg.Text = "I'm ok."
-				case "withArgument":
-					msg.Text = "You supplied the following argument: " + update.Message.CommandArguments()
-				case "html":
-					msg.ParseMode = "html"
-					msg.Text = "This will be interpreted as HTML, click <a href=\"https://www.example.com\">here</a>"
-				default:
-					msg.Text = "I don't know that command"
-				}
-				bot.Send(msg)
-			} else {
-				log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
-
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
-				msg.ReplyToMessageID = update.Message.MessageID
-
-				bot.Send(msg)
-			}
+		if update.Message == nil {
+			continue
 		}
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
+
+		switch update.Message.Text {
+		case "open":
+			msg.ReplyMarkup = numericKeyboard
+		case "close":
+			msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+		}
+
+		bot.Send(msg)
 	}
 }
